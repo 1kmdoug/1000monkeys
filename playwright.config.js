@@ -18,6 +18,11 @@ module.exports = defineConfig({
     { name: 'iphone', use: { ...devices['iPhone 13'], browserName: 'chromium' } },
     { name: 'small-phone', use: { ...devices['iPhone SE'], browserName: 'chromium' } },
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    // Real iPhones run Safari's engine (WebKit). Runs on GitHub; skipped in
+    // environments without WebKit installed unless WEBKIT=1 is set.
+    ...(process.env.CI || process.env.WEBKIT
+      ? [{ name: 'iphone-safari', use: { ...devices['iPhone 13'] } }]
+      : []),
   ],
   webServer: {
     command: 'python3 -m http.server 4173 --directory public',
