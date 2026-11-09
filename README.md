@@ -11,6 +11,8 @@ A comfortable reader for your own drafts. Read your work like a finished book, m
 | Path | What it is |
 | --- | --- |
 | `public/` | Everything the website serves. Nothing outside this folder is public. |
+| `public/index.html` | Landing page (placeholder) |
+| `public/app/` | The reader |
 | `docs/` | Project doc and notes |
 | `tests/` | Automated checks that load the reader on emulated phones and desktop |
 
@@ -20,7 +22,7 @@ A comfortable reader for your own drafts. Read your work like a finished book, m
 npm run serve
 ```
 
-Then open http://localhost:4173.
+Then open http://localhost:4173 (homepage) or http://localhost:4173/app/ (reader).
 
 ## Tests
 

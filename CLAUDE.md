@@ -32,4 +32,5 @@ Build phase runs on a Cloudways server (PHP/MySQL stack) under a temporary Cloud
 - Serve: `npm run serve` (port 4173, serves `public/`). Tests: `npm test` (Playwright; in this cloud container prefix with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`).
 - Every change: branch → tests pass → pull request with a plain-English summary for Doug (not a developer; explain what changed and what to check on the phone).
 - Known bugs get a `test.fail()` test pointing at their issue; when fixed, remove the `test.fail` line.
+- `main` holds reviewed, working code and is what Cloudways deploys. Work happens on branches and reaches `main` only through a pull request.
 - Cloudways: Deployment path `public_html/public`, webroot `public_html/public/public`. Varnish is bypassed for this app with a `/*` exclusion.

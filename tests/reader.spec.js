@@ -25,7 +25,7 @@ let pageErrors;
 test.beforeEach(async ({ page }) => {
   pageErrors = [];
   page.on('pageerror', (e) => pageErrors.push(e.message));
-  await page.goto('/');
+  await page.goto('/app/');
 });
 test.afterEach(() => {
   expect(pageErrors, 'JavaScript errors on the page').toEqual([]);
