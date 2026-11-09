@@ -1,0 +1,12 @@
+{
+  "name": "1000monkeys",
+  "private": true,
+  "description": "A reader for your own drafts.",
+  "scripts": {
+    "serve": "python3 -m http.server 4173 --directory public",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

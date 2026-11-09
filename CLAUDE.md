@@ -22,3 +22,9 @@ Out of scope until Phase 1 is in daily use: accounts, billing, beta rounds, troo
 
 ## Hosting
 Build phase runs on a Cloudways server (PHP/MySQL stack) under a temporary Cloudways URL. Keep the backend thin and portable so it can move to a bigger server later.
+
+## Working conventions
+- Serve: `npm run serve` (port 4173, serves `public/`). Tests: `npm test` (Playwright; in this cloud container prefix with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`).
+- Every change: branch → tests pass → pull request with a plain-English summary for Doug (not a developer; explain what changed and what to check on the phone).
+- Known bugs get a `test.fail()` test pointing at their issue; when fixed, remove the `test.fail` line.
+- Cloudways: Deployment path `public_html/public`, webroot `public_html/public/public`. Varnish is bypassed for this app with a `/*` exclusion.
