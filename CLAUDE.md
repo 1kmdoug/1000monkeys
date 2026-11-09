@@ -20,6 +20,11 @@ Out of scope until Phase 1 is in daily use: accounts, billing, beta rounds, troo
 - Respect Reduce Motion. Local-first; no spinners while reading.
 - Secrets (Notion token, server credentials) never go in the repo.
 
+## Site layout
+- `/` is the public landing page (placeholder for now) with an "Open the reader" / "Log in" button.
+- `/app/` is the reader. Keep app links relative to `/app/` so it can later move to its own subdomain (e.g. `app.1000monkeys.io`).
+- Phase 1 has no accounts: "Log in" just opens the app. Beta-reader links (Phase 2) open straight into a chapter and never pass through the landing page. See issue #15.
+
 ## Hosting
 Build phase runs on a Cloudways server (PHP/MySQL stack) under a temporary Cloudways URL. Keep the backend thin and portable so it can move to a bigger server later.
 

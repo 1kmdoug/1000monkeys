@@ -243,6 +243,7 @@ Phase 1 is deliberately small. It only has to prove the round trip works in my o
 
 The product version breaks the single-file rule on purpose. Sync, accounts and sharing need a small backend; the Cloudflare Worker already planned as a Notion proxy is a natural starting point.
 
+- **Site layout:** a public landing page at `/` with a link into the app, and the reader at `/app/` (later its own subdomain). The landing page starts as a placeholder; "Log in" opens the app until accounts arrive in Phase 2.
 - **Today:** one HTML file, localStorage, pdf.js for PDF text, measure-and-pack pagination for page mode.
 - **Notion import:** top-level toggles become chapters. Nested toggles (my old versions) could import as history or be skipped.
 - **Sync direction:** source to reader, one way. Only feedback the author accepts writes back.
