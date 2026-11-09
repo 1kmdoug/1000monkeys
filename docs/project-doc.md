@@ -16,7 +16,7 @@ Reading your own draft the way a reader would is one of the best revision tricks
 
 - **Writers already hack it together.** One writer converts drafts to EPUB and sends them to Apple Books, because the draft reads like a different book there and can't be edited, only lightly marked up ([source](https://edan.substack.com/p/dispatch-28-flashbacks-revision-and/comments)). Scrivener users follow guides to push drafts to a Kindle or Kobo and revise from the highlights ([source](https://kirkville.com/how-to-revise-the-draft-of-your-scrivener-project-on-an-ebook-reader/)).
 - **The round trip is the broken part.** Highlights get stuck on the e-reader. Notes are carried back by hand.
-- **Versions pile up as copies.** My own setup: chapters live in Notion toggles, and old versions lived in nested toggles until exporting got too painful to keep doing it.
+- **Versions pile up as copies.** My own setup: one long Notion page per story, chapters under headings or toggles, and old versions lived in nested toggles until exporting got too painful to keep doing it.
 - **Beta feedback scatters.** Email threads, Word files, chat messages. Nothing ties a reader's reaction to the sentence it's about.
 
 ## Who it's for
@@ -32,6 +32,8 @@ Writers are the customer. Everyone else is someone the writer brings along.
 
 I'm user #1. If it doesn't earn a permanent spot in my own revision routine, it doesn't ship to anyone else.
 
+User #1 is not the spec, though. This started as my personal e-reader, and my setup, habits and comfort zone are all over the first draft of this plan. A product has to cope with how other writers work, so my way of doing things is the first test case and nothing more. The assumptions I've baked in are listed under Risks so they get tested instead of inherited.
+
 ## Principles
 
 It has to feel simple even when it isn't. Every new feature will try to break these, so they're written down first.
@@ -41,7 +43,8 @@ It has to feel simple even when it isn't. Every new feature will try to break th
 3. **No dashboards.** Feedback shows up in the margin, next to the text it's about.
 4. **The author is a reader too.** One reader with different permissions, not two apps that drift apart.
 5. **Readers never write to the manuscript.** The author approves everything that reaches the source doc.
-6. **The free version stays useful.** Local, private, unlimited reading, the way it works today.
+6. **The free version stays useful.** Private, unlimited reading. It still works on one device with no account, the way it does today.
+7. **Your work is yours.** Private unless you share it, never public by accident, and you can export or delete all of it.
 
 ## Experience
 
@@ -70,11 +73,15 @@ Double-tap has a cost: single taps must wait a beat to see if a second one is co
 
 Native selection on iPhone is fiddly: tiny handles, a system menu in the way, page swipes fighting the drag. A custom layer can do better, and the web pieces now exist in every major browser.
 
+This section is a direction, not a spec. What feels right will come from trying things on a real iPhone, so expect a few rounds of trial and error before any of it is settled.
+
+- **Paragraph first.** Notion can only take a comment on a whole paragraph, so the first working version is the plain one: tap a paragraph, write a note, send. Sentence selection gets layered on once that loop works.
 - **Sentence-first.** Long-press selects the whole sentence, the natural unit of feedback, and handles snap to word boundaries. `Intl.Segmenter` splits text into sentences and words in Chrome 87+, Firefox 125+ and Safari 14.1+ ([source](https://web.dev/blog/intl-segmenter?hl=en)).
 - **Finding the touch point.** `caretRangeFromPoint` maps a finger position to a spot in the text. It's non-standard but supported in Safari on iOS ([source](https://docs.w3cub.com/dom/document/caretrangefrompoint)).
 - **Drawing it.** The CSS Custom Highlight API paints selections and highlights without changing the text's markup. Safari on iOS has supported it since 17.2 ([source](https://caniuse.com/mdn-api_css_highlights_static)).
 - **Our own bar, not the system menu.** A selection opens one row: reactions, add a note, suggest an edit.
 - **Native stays available** for copying, VoiceOver, and anyone who prefers it. Custom selection must never break accessibility.
+- **The catch to solve.** On iPhone, a web page doesn't appear to have a way to hide the system menu without also switching off native selection, so at any moment it's one or the other. Ideas to try: a Copy button in our own bar, and a setting that hands selection back to the system. VoiceOver users get the same actions as ordinary buttons, because custom gestures mostly don't reach the page while VoiceOver is on.
 
 ### Reactions
 
@@ -94,6 +101,8 @@ Native selection on iPhone is fiddly: tiny handles, a system menu in the way, pa
 
 - **Quick, small animations** on reactions (a heart pop, a warming margin mark). Lottie is a natural fit. Respect Reduce Motion.
 - **Fast and calm.** Opens instantly, works offline, saves locally first and syncs in the background. No spinners while reading.
+- **What offline means.** Two separate things. Your library, notes and place are kept on the device, so reading never waits on the network. The app itself also has to be kept on the device to open with no signal, and that takes a service worker: a small file that stores a copy of the app's own pages. Anything written offline waits in a queue and goes out the next time the app is open with a connection, since iPhone Safari won't send in the background.
+- **Percent read, like a Kindle.** The page shows how far along you are. Behind it, the bookmark is the paragraph you were on rather than the percentage, so your place holds when the text changes or the type size does.
 - **Haptics need a native app.** iOS Safari has never supported the web vibration API, and the switch-element workaround stopped working in iOS 26.5 ([source](https://rapidtoolset.com/en/tool/ios-haptics-tester)). Real haptics are a good argument for a native wrapper later.
 - **First run for readers.** A shared link opens straight to chapter one. One short hint shows the three gestures, then gets out of the way.
 
@@ -130,16 +139,33 @@ Readers don't need an account. Each one gets a personal link, so their notes com
 
 The story and the feedback on it live in two separate trees. A round never copies text: it points at a slice of one work, pinned to a version. There's only ever one chapter 4, and notes can follow the text forward as it changes.
 
-&#91;embedded content: structure · the story and the feedback on it\]
+**The story**
+
+- Series (optional)
+  - Work: one story or book, linked to one source
+    - Chapter
+      - Passage: one paragraph, heading or scene break
+
+**The feedback**
+
+- Troop (optional): a saved pool of readers
+- Round: one go at a slice of a work, pinned to one version
+  - Reader
+    - Note or reaction, anchored to one passage
 
 A round points at the work rather than holding a copy, and every note anchors to a single passage.
+
+*(The diagram that sat here didn't come across in the export. This is its outline in words, rebuilt from the text around it.)*
 
 We call the scoped review a **round** rather than a project. Writers already say "beta round," and "project" tends to swallow everything. A saved pool of readers is a **troop**, because that's what a group of monkeys is called.
 
 ### Decisions to make early
 
 - **Passages get permanent IDs from day one.** Notes, reactions, Notion block sync, variants and art slots all hang off them. Adding stable IDs later is painful.
+- **A passage is one paragraph.** Or one heading, or one scene break: the smallest piece that gets an ID. A highlight is a stretch of words inside a passage, not a passage of its own.
+- **The IDs are ours, not the source's.** Each passage keeps the source's ID beside it (a Notion block ID, say) but doesn't use it as its own. Notion hands out new IDs when a paragraph is split or a page is duplicated, and a work may change sources one day.
 - **Every piece of feedback carries four tags:** round, version, reader and passage. Those four make every later view possible (by reader, by chapter, outdated vs. current) without restructuring.
+- **Rounds and versions are two things.** A round is one go at getting feedback on a slice of the work: round 1 on chapter 4, then round 2. A version is the text as it stood at one moment. Starting a round saves a version and pins the round to it, which is why the two get used interchangeably. They come apart in two places: I can revise between rounds with nobody reading, and two groups can read the same version in separate rounds. My own read-through counts as a round with one reader.
 - **Roles are set per work.** Someone can be a reader on one story, an editor on another and an illustrator on a third.
 - **Reader history across rounds,** visible only to the author: who finishes, who's sharp on dialogue, who reads fast. Useful for building troops, but kept light so it never feels like grading people.
 - **The free limit lives per round.** A round with up to two readers is free. Troops and bigger rounds are the paid tier.
@@ -151,16 +177,68 @@ We call the scoped review a **round** rather than a project. Writers already say
 
 ### Sources
 
-- **Notion** first, since that's where my stories live. One-way sync: edit in Notion, the reader updates.
+- **Notion** first, because it's what I can test on my own stories. That's a build order, not a bet that most writers use Notion. One-way sync: edit in Notion, the reader updates.
 - **Google Docs** next.
 - **Native docs** with a light editor, so the product isn't fully dependent on another platform. The editor should feel like the reader grew a cursor: same type, same page, no toolbar maze.
 - **Paste and PDF** stay, as they work today (PDF text extraction already filters running headers and footers).
 
 One rule keeps sync sane: native docs are editable, synced docs are read-and-comment. Tiny fix-it edits (a typo) can write back one block at a time, and that's the limit.
 
+Fresh text from a sync shows up when a chapter is opened, never underneath the page being read.
+
+### Import: detect, show, confirm
+
+Writers lay out drafts in different ways, and mine is only one of them. So the importer doesn't assume a layout. It reads the document, makes its best guess, shows the result, and lets the writer correct it. One screen when the guess is right, which should be most of the time.
+
+1. **Detect.** Work out how the document is built and pick the likeliest chapter rule.
+2. **Show.** Preview the chapter list in plain words: "16 chapters, split at Heading 1. Look right?"
+3. **Confirm or change.** Pick another rule from a short list, and mark anything that isn't story (notes above the first chapter, an outline, old drafts) to be skipped.
+4. **Remember.** The rule is saved with the work and reused on every sync. If the document stops fitting it (a new heading level, a chapter count that suddenly doubles), the app asks instead of guessing.
+
+| How the draft is laid out | Chapter rule | Phase |
+| --- | --- | --- |
+| One page or doc, chapters under headings | Split at the biggest heading used more than once. Smaller headings become sections inside a chapter | 1 |
+| Chapters in toggles or toggle headings (Notion) | Each top-level toggle is a chapter. Nested toggles are skipped unless the writer asks for them | 1 |
+| No structure at all | One chapter, with an offer to split at dividers or at lines that look like "Chapter 3" | 1 |
+| A page whose sub-pages are the chapters (Notion) | Each sub-page is a chapter, in page order | 2 |
+| A database with one page per chapter (Notion) | Each row is a chapter; the writer picks the column that sets the order | 2 |
+| Tabs or page breaks (Google Docs) | Each tab or page break starts a chapter | 2 |
+
+The list will grow as I see how other writers do it. Collecting real layouts is part of the writer interviews.
+
+### Formatting
+
+Formatting comes over intact from Notion and Google Docs. If the writer italicized a word, it's italic on the page.
+
+- **Emphasis:** italic, bold, underline, strikethrough and links.
+- **Structure:** headings, scene breaks (dividers and the usual `* * *` lines), block quotes, lists, and centered lines where the source has them.
+- **Images** in Phase 2. Notion's image links expire after an hour, so the server has to keep its own copy.
+- **Not the source's fonts and colors.** Typeface, size and theme stay the reader's choice, or night mode would break. What carries over is emphasis and structure.
+- **Stray blank paragraphs are collapsed** so they don't leave holes in the page. The import preview has a switch for writers who use blank lines as scene breaks.
+- **Nothing is dropped without saying so.** A block the reader can't show yet (a table, an embed) appears as a small placeholder naming what it is.
+- **Fixes keep formatting.** A typo fix sent back to the source changes the words and leaves the italics around them alone.
+
+### Library and storage
+
+Every writer gets a private library on the 1000 Monkeys server. It holds:
+
+- works with no outside source: pasted text, PDFs, native docs
+- a copy of each synced work, so reading never waits on Notion or Google, and a round can stay pinned to the version it started on
+- notes, reactions and your place in each piece, whatever the source
+
+The device keeps its own copy of whatever has been opened, and that copy is what gets read. It's why the page opens instantly and still works with no signal. The server copy is the backup, and the hub that keeps a phone and a laptop in step.
+
+- **No account, still useful.** Paste text or drop in a PDF and read on one device, with nothing sent to the server. Signing in adds backup, sources and sync between devices.
+- **Private by default.** Nothing in a library can be reached without its owner's login. Drafts are never public and never indexed by search engines. A shared link (Phase 2) opens one round for one reader.
+- **Export and delete.** Everything can be downloaded, and deleted means gone.
+- **A failed save says so.** No silent losses.
+- **Phase 1 has one owner: me.** A single login guards the server. Open sign-up and billing wait for Phase 2, but everything is stored per owner from the start, so adding writers later means adding owners, not rebuilding.
+
 ### Versions
 
 Every reading round saves a snapshot of the draft automatically. Old versions stay one tap away, and every note stays tied to the version it was written on. This replaces the nested-toggle habit that made exports painful.
+
+A sync that brings in changes is recorded as a version too, so a note always knows which text it was written on. My own reading follows the latest sync. A round with readers stays on the version it started with until I start the next round, which is why the server keeps its own copy of synced works.
 
 ### Feedback and triage
 
@@ -175,9 +253,18 @@ The app is the feedback inbox. The source doc only gets what the author decides 
 - **Filters** by reader, group, or round.
 - **Blind by default.** Readers can't see each other's notes.
 
-&#91;embedded content: feedback flow · 6 steps, 1 decision\]
+1. A reader reacts to a passage or leaves a note on it.
+2. It's saved with its four tags: round, version, reader, passage.
+3. It shows up in my margin, next to the text it's about.
+4. I decide: accept, dismiss, or later.
+5. Accepted notes and edits sync to the source.
+6. The reader hears that their note was used.
 
 Accepted notes and edits are the only thing that travels back to the source. Notes marked "later" wait in the inbox.
+
+In Phase 1 I'm the only reader, so sending a note is the same as accepting it.
+
+*(This list stands in for a flow diagram that didn't come across in the export.)*
 
 ### What syncs back
 
@@ -186,6 +273,8 @@ Accepted notes and edits are the only thing that travels back to the source. Not
 | Native docs | Inline comments, full precision | Direct edits | None |
 | Notion | A comment on the paragraph's block | Direct block edit | API can't start a thread on a highlighted phrase ([source](https://developers.notion.com/guides/data-apis/working-with-comments)) |
 | Google Docs | Comments | Real Docs suggestions the author accepts in Docs | API support began rolling out Sept 30, 2026 ([source](https://workspaceupdates.googleblog.com/2026/09/programmatic-comment-and-suggestion.html)) |
+
+Comments the app posts in Notion show the integration's name, or a custom one we set, rather than mine ([source](https://developers.notion.com/reference/comment-display-name)). Calling it 1000 Monkeys makes them easy to spot. Worth confirming on the scratch page.
 
 ### Kindle
 
@@ -235,25 +324,44 @@ The beta-reader tool market is small and slow-moving, and nobody syncs with wher
 
 ## Phasing
 
-&#91;embedded content: roadmap · 3 phases, 2 gates\]
+| Phase | Who it's for | What it has to prove | What's in it |
+| --- | --- | --- | --- |
+| **1** | Me | The round trip works in a real revision routine | Owner login and server library, Notion import with detect-show-confirm, formatting carried over, paragraph notes landing as Notion comments, offline, better selection and double-tap likes |
+| **Gate 1** | | One full revision pass on Hildur using only 1000 Monkeys | |
+| **2** | Writers and their beta readers | Other writers get the same loop on their own drafts, with their own readers | Sign-up, connect-your-own Notion and Google Docs, more draft layouts, rounds and reader links, reactions and triage, version history, illustrators, the differentiators |
+| **Gate 2** | | Not written down yet (see open questions) | |
+| **3** | Public readers, someday | Published work read straight from the author | To be planned |
 
-Phase 1 is deliberately small. It only has to prove the round trip works in my own revision routine.
+Phase 1 has one job: prove the round trip works in my own revision routine. It's bigger than it first looked, because a private server library and an importer that doesn't assume my layout both have to exist before I trust it with a real manuscript.
+
+**Gate 1, pass or fail.** Decided before the pass starts, not after:
+
+- I finish the whole pass on Hildur inside the app.
+- Every time I go back to the old way, I write down why. A handful is fine. A habit is a fail.
+- At the end I'd pick it for the next story without talking myself into it.
+
+Phase 1 also gets a date. If the Hildur pass hasn't started by then, building stops until I know why.
+
+*(This table stands in for a roadmap diagram that didn't come across in the export. Phase contents are pulled from the rest of this doc.)*
 
 ## Technical notes
 
-The product version breaks the single-file rule on purpose. Sync, accounts and sharing need a small backend; the Cloudflare Worker already planned as a Notion proxy is a natural starting point.
+The product version breaks the single-file rule on purpose. Sync, accounts and sharing need a small backend. It runs on the Cloudways server the build is hosted on (PHP and MySQL), kept thin and portable so it can move somewhere bigger later.
 
-- **Site layout:** a public landing page at `/` with a link into the app, and the reader at `/app/` (later its own subdomain). The landing page starts as a placeholder; "Log in" opens the app until accounts arrive in Phase 2.
-- **Today:** one HTML file, localStorage, pdf.js for PDF text, measure-and-pack pagination for page mode.
-- **Notion import:** top-level toggles become chapters. Nested toggles (my old versions) could import as history or be skipped.
+- **Site layout:** a public landing page at `/` with a link into the app, and the reader at `/app/` (later its own subdomain). The landing page starts as a placeholder. "Log in" simply opens the app today; it becomes the owner login in Phase 1 and open sign-up in Phase 2.
+- **Today:** a landing page plus the reader as one HTML file. Everything is saved in the browser's localStorage, as plain text with no formatting. pdf.js for PDF text (loaded from an outside CDN), measure-and-pack pagination for page mode, long paragraphs continued on the next page.
+- **Locked by default:** anything on the server that can read a manuscript or write to a source sits behind the owner's login. The Notion piece only touches pages the owner has connected and only does what the app needs: read a page, post a comment, and later fix a block. Every page carries a no-index tag until there's something meant to be public.
+- **Storage shape:** a work is a list of chapters, a chapter is a list of passages, and a passage is formatted text with its own permanent ID and the source's ID beside it. The same shape lives on the device and on the server. On the device it moves from localStorage (about 5 MB, and a full store currently fails without a word) to IndexedDB, the browser's roomier database.
+- **The device copy isn't safe alone:** Safari can clear a site's saved data after seven days of use without a visit to that site, with Home Screen apps counted separately ([source](https://searchengineland.com/what-safaris-7-day-cap-on-script-writeable-storage-means-for-pwa-developers-332519)). Browsers also keep data per web address, so moving from the temporary URL to the real domain leaves the old device copy behind. The server library and the export button cover both. The move to the real domain happens before the Hildur pass.
+- **Notion import:** chapters come from the import rule (see Import), not from a fixed layout. Notion returns 100 blocks per request and allows about three requests a second ([source](https://developers.notion.com/reference/request-limits)), so a 30,000-word story is a dozen requests and a few seconds. The server keeps the copy and the reader never waits on Notion.
+- **Connecting sources for other writers (Phase 2):** Phase 1 uses a private Notion token that lives on the server, outside the public folder. Other writers need a Connect Notion button that lets them choose which pages to share. Google Docs needs Google's review before strangers can connect; choosing one doc at a time through Google's file picker keeps that review lighter. Check the current rules for both when the time comes.
 - **Sync direction:** source to reader, one way. Only feedback the author accepts writes back.
-- **Anchoring:** store each note's quoted text plus a few words on either side, along with the block ID. Notes find their place again after edits, and a missing quote marks the note outdated. This is the web-annotation approach tools like Hypothesis use.
+- **Anchoring:** store each note's quoted text plus a few words on either side, along with the passage ID. Notes find their place again after edits, and a missing quote marks the note outdated. This is the web-annotation approach tools like Hypothesis use. Notes anchor to the plain words, so a change in formatting never strands one. A highlight that runs across two paragraphs is one note, anchored to the first, carrying the whole quote.
+- **Reading position:** saved as the passage at the top of the screen plus how many words into it, so it holds through edits, a change of type size, and a switch between scroll and page mode. Percent read is worked out from that (words before the spot, over total words) and shown the way a Kindle shows it. If the passage is gone after an edit, fall back to the nearest one that survived.
 - **Notion API:** comments attach to a whole block. It can reply to an existing phrase-level thread but can't start one ([source](https://developers.notion.com/guides/data-apis/working-with-comments)).
 - **Google Docs API:** comments and suggested edits are supported, rolling out from Sept 30, 2026 ([source](https://workspaceupdates.googleblog.com/2026/09/programmatic-comment-and-suggestion.html)).
-- **Offline reading:** keep it. Reedsy Studio is browser-only today and plans to make offline a paid feature ([source](https://reedsy.com/studio/write-a-book)).
+- **Offline reading:** keep it. Reedsy Studio is browser-only today and plans to make offline a paid feature ([source](https://reedsy.com/studio/write-a-book)). The device copy covers the text. A service worker keeps the app itself available with no signal, and pdf.js gets served from our own site instead of a CDN. Notes written offline queue on the device and send when the app is next open online.
 - **Reader tracking** (drop-off, skim detection) is opt-in and disclosed up front. One review found BetaReader.io's tracking could feel like spying on readers ([source](https://janefriedman.com/beta-management-services-compete-for-authors/)).
-- **Known issue:** in page mode, a paragraph taller than the screen overflows its page. It needs splitting inside paragraphs.
-
 ## Business model
 
 The base product is free: a comfortable reader for your own work, plus personal editing tools. Sharing with more than two readers is the upsell. People won't pay for storage; they'll pay for the loop between reading, feedback and the manuscript.
@@ -274,40 +382,73 @@ The biggest risk is the one closest to home: this was built to get me writing ag
 
 | Risk | Why it matters | Mitigation |
 | --- | --- | --- |
-| **It eats writing time** | Sync, auth and billing are the kind of shiny work that crowds out the actual stories | Phase 1 is for me only. Move on only if I'm really using it |
+| **It eats writing time** | Sync, auth and billing are the kind of shiny work that crowds out the actual stories | Phase 1 is for me only and has a date on it. Move on only if I'm really using it |
+| **It's built around my habits** | A plan shaped by one writer's setup breaks on the second writer | Treat my setup as a test case. Import asks instead of assuming. Test the baked-in assumptions below |
+| **We hold unpublished manuscripts** | A leak hurts writers, and a draft readable on the open web can count as already published for some magazines and contests | Private behind a login, never indexed, export and delete, backups |
 | **Reedsy adds feedback to previews** | They're free and already have the e-reader | Lead with sync and the unique features, not the reader alone |
 | **Platform APIs change** | Sync depends on Notion and Google | Native docs as the fallback home |
 | **Tiny samples** | Variants with 12 readers is 6 vs. 6 | Present results as directional, never as winners |
 | **Tracking feels creepy** | Readers quit if they feel watched | Opt-in, disclosed, aggregate views for the author |
 | **Kids as readers** | For children's books, collecting data from kids under 13 brings in children's privacy rules (COPPA in the US) | Parents hold the account; no tracking on child readers; get proper advice before launch |
 
+**Assumptions I've baked in**
+
+Each of these came from how I work. None has been checked against another writer yet.
+
+| Assumption | Where it came from | How to test it |
+| --- | --- | --- |
+| Writers draft in Notion or Google Docs | That's where mine live | Ask in the interviews. Plenty of novelists draft in Word or Scrivener, so a .docx upload may matter more than either sync |
+| Chapters are marked the way mine are | My own pages | Import detects and asks. Collect real layouts from other writers |
+| Reading and reacting happen on a phone | My habit | See what beta readers actually open the link on |
+| The work is prose fiction in chapters | Ethereal Fairytales | Run a poetry collection, a picture book and an essay through import |
+| Setup is done by someone technical | Phase 1 is me, with a token placed on a server | Connect buttons and sign-in in Phase 2 |
+| Five fixed reactions are the right five | My guess | The test rounds with two friends |
+
 **Open questions**
 
-- [ ] Should nested Notion toggles import as version history, or be skipped?
+- [x] Should nested Notion toggles import as version history, or be skipped? Skipped by default; the writer can ask for them. History import can come later if anyone wants it.
 - [ ] Is 1000 Monkeys clear as a trademark and domain? A collaborative fiction site, One Million Monkeys Typing, used the same idea from 2007 to 2011 and called its users "monkeys" ([source](https://en.wikipedia.org/wiki/One_Million_Monkeys_Typing)). It's long offline, but worth knowing.
 - [ ] Free accounts get sync and server storage. What cap keeps hosting costs sane?
 - [ ] With the platform and the publishing imprint sharing a name, the terms need to say plainly that writers own their work.
 - [ ] Do Reedsy previews collect any reader feedback today? Check hands-on.
-- [ ] What's a "round": a fixed window of time, or one version of the draft?
+- [x] What's a "round"? One numbered go at a slice of the work, pinned to one version. Not a window of time, though it can have a closing date.
 - [ ] $8 or $10 for the Writer tier?
+- [ ] What date goes on Phase 1, and how many hours a week is it allowed to take from writing?
+- [ ] What is gate 2? One candidate: a handful of outside writers each finish a real round and say they'd pay for it.
+- [ ] Is a .docx upload more useful to most writers than Google Docs sync?
+- [ ] The Writer tier sells triage and margin heat, which are table stakes elsewhere, while the two headline features sit under Later. Is it selling the right things?
+- [ ] Two free readers is fewer than any competitor's free tier (three to five). Keep it?
 
 ## Next steps
 
-Start small and use it for real before building anything for anyone else.
+Use it for real before building anything for anyone else.
 
-- [ ] Notion sync for my Ethereal Fairytales page, with top-level toggles as chapters
-- [ ] Highlight a passage, send it to Notion as a block comment
-- [ ] Prototype sentence-first custom selection and double-tap likes, tested on a real iPhone
-- [ ] Do one full revision pass on Hildur using only 1000 Monkeys
-- [ ] Fix page-mode overflow for long paragraphs
-- [ ] UX teardown: Kindle, Apple Books, Medium, Wattpad, Readwise Reader and the beta tools
+**Build, in this order**
+
+- [x] Fix page-mode overflow for long paragraphs
+- [ ] Lock the server: one owner login, nothing about a manuscript reachable without it, a no-index tag on every page
+- [ ] New storage shape: works, chapters and passages with permanent IDs and formatting, on the device and in the server library, with an export button. Nothing already in the library gets lost
+- [ ] Notion import with detect, show, confirm (headings, toggles, or no chapters), formatting intact. Built against a scratch copy of a story first
+- [ ] The round trip: tap a paragraph, write a note, and it lands in Notion as a comment on that block
+- [ ] Reading position saved by passage, with percent read shown from it
+- [ ] Offline: service worker, pdf.js served from our own site, notes that queue until there's a connection
+- [ ] Move to the real domain
+- [ ] Sentence-first selection and double-tap likes, by trial and error on a real iPhone
+- [ ] Gate 1: one full revision pass on Hildur using only 1000 Monkeys
+
+**Alongside, since it's talking and not building**
+
+- [ ] Talk to five writers who've run a beta round about what broke. Ask where they write and how their drafts are laid out
+- [ ] UX teardown: Kindle, Apple Books, Medium, Wattpad, Readwise Reader and the beta tools. Do it before the selection work
 - [ ] Run a small test round on the free tiers of Reedsy Studio, BetaBooks, BetaReader.io and StoryOrigin, with two friends as readers
-- [ ] Talk to five writers who've run a beta round about what broke
 - [ ] Check 1000 Monkeys trademark and domain availability
 
 ## Sources
 
 - [Notion: Working with comments](https://developers.notion.com/guides/data-apis/working-with-comments)
+- [Notion: Comment display name](https://developers.notion.com/reference/comment-display-name)
+- [Notion: Request limits](https://developers.notion.com/reference/request-limits)
+- [Search Engine Land: Safari's 7-day cap on script-writeable storage](https://searchengineland.com/what-safaris-7-day-cap-on-script-writeable-storage-means-for-pwa-developers-332519)
 - [Google Workspace Updates: comment and suggestion support in the Docs API](https://workspaceupdates.googleblog.com/2026/09/programmatic-comment-and-suggestion.html)
 - [Stripe Connect: 1099 tax reporting](https://stripe.com/en-si/connect/1099)
 - [Stripe: who is responsible for 1099 reporting](https://support.stripe.com/questions/who-is-responsible-for-1099-tax-reporting-after-migrating-standard-connected-accounts)
