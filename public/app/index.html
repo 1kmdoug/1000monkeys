@@ -447,6 +447,10 @@
   .article p:not(.first-para) {
     text-indent: 1.4em;
   }
+  /* A paragraph continued from the previous page: no fresh indent. */
+  .article p.cont {
+    text-indent: 0;
+  }
   .article .first-para::first-letter {
     font-size: 3.4em;
     line-height: 0.85;
@@ -478,7 +482,14 @@
     line-height: var(--reader-leading);
     color: var(--ink);
     box-sizing: border-box;
+    /* Must clip like .page does: browsers only count the last paragraph's
+       bottom margin in scrollHeight on clipping containers, so without this
+       the measurement comes up short and pages overflow (issue #1). */
+    overflow: hidden;
   }
+  /* Same typography as a real page (it carries the .article class), and the
+     same first-child rule as .page, so measured breaks match what's shown. */
+  #measureStage > *:first-child { margin-top: 0; }
 
   /* ---------- SETTINGS DRAWER ---------- */
   .drawer {
@@ -598,7 +609,7 @@
   </section>
 
   <!-- offscreen pagination measurer -->
-  <div id="measureStage"></div>
+  <div id="measureStage" class="article"></div>
 
   <!-- SETTINGS DRAWER -->
   <aside class="drawer" id="drawer" aria-hidden="true">
@@ -1141,8 +1152,13 @@
   }
 
   // Pagination — measure each element in an offscreen stage that matches
-  // the visible .page dimensions, accumulating elements until adding the
-  // next would overflow.
+  // the visible .page dimensions, filling each page until the next element
+  // won't fit. A paragraph that doesn't fit is split at a word boundary, the
+  // way a printed book does: the head stays on this page, the rest continues
+  // on the next one (issue #1). Fragments of one paragraph share the same
+  // data-para index so notes can find the whole paragraph later.
+  const MIN_LINES_AT_PAGE_BOTTOM = 2;
+
   function paginateContent(elements, pageW, pageH) {
     const m = $('#measureStage');
     // padding matches the .page rule (0.75rem top/bottom, 1.5rem left/right)
@@ -1153,23 +1169,82 @@
 
     const pages = [];
     let current = [];
+    const fits = () => m.scrollHeight <= pageH;
+    const newPage = () => {
+      pages.push(current);
+      current = [];
+      m.innerHTML = '';
+    };
 
-    for (const el of elements) {
+    const queue = elements.slice();
+    elements.forEach((el, i) => { el.dataset.para = i; });
+
+    while (queue.length) {
+      const el = queue.shift();
       const clone = el.cloneNode(true);
       m.appendChild(clone);
-      if (m.scrollHeight > pageH && current.length > 0) {
-        m.removeChild(clone);
-        pages.push(current);
-        current = [];
-        m.innerHTML = '';
-        m.appendChild(el.cloneNode(true));
+      if (fits()) { current.push(el); continue; }
+
+      if (el.tagName === 'P') {
+        const parts = splitParagraphToFit(el, clone, fits, current.length === 0);
+        if (parts) {
+          current.push(parts.head);
+          newPage();
+          queue.unshift(parts.tail);
+          continue;
+        }
       }
-      current.push(el);
+
+      m.removeChild(clone);
+      if (current.length) {
+        // Doesn't fit here and can't usefully split: start it on a fresh page.
+        newPage();
+        queue.unshift(el);
+      } else {
+        // Already alone on an empty page and still can't be split (e.g. a
+        // single enormous word). Place it rather than loop forever.
+        m.appendChild(el.cloneNode(true));
+        current.push(el);
+        newPage();
+      }
     }
     if (current.length) pages.push(current);
 
     m.innerHTML = '';
     return pages;
+  }
+
+  // Find the most words of paragraph `el` that fit on the page being measured
+  // (`clone` is el's copy, already appended to the measure stage). Returns
+  // { head, tail } paragraphs, or null if too little fits to be worth a split.
+  function splitParagraphToFit(el, clone, fits, pageIsEmpty) {
+    const words = el.textContent.split(/\s+/).filter(Boolean);
+    if (words.length < 2) return null;
+
+    let lo = 0, hi = words.length - 1; // largest k in [0, n-1] that fits
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      clone.textContent = words.slice(0, mid).join(' ');
+      if (fits()) lo = mid; else hi = mid - 1;
+    }
+    if (lo === 0) return null;
+
+    clone.textContent = words.slice(0, lo).join(' ');
+    const lineH = parseFloat(getComputedStyle(clone).lineHeight) || 1;
+    const lines = Math.round(clone.getBoundingClientRect().height / lineH);
+    if (!pageIsEmpty && lines < MIN_LINES_AT_PAGE_BOTTOM) return null;
+
+    const head = el.cloneNode(false);
+    head.textContent = words.slice(0, lo).join(' ');
+    head.classList.add('split-head');
+
+    const tail = el.cloneNode(false);
+    tail.textContent = words.slice(lo).join(' ');
+    tail.classList.remove('first-para', 'split-head');
+    tail.classList.add('cont');
+
+    clone.textContent = head.textContent;
+    return { head, tail };
   }
 
   function gotoPage(idx, animate = true) {
