@@ -139,23 +139,35 @@ Readers don't need an account. Each one gets a personal link, so their notes com
 
 The story and the feedback on it live in two separate trees. A round never copies text: it points at a slice of one work, pinned to a version. There's only ever one chapter 4, and notes can follow the text forward as it changes.
 
-**The story**
+**Rounds point at the story; they never copy it.** The story on the left, feedback on the right. Every note is tied to one passage.
 
-- Series (optional)
-  - Work: one story or book, linked to one source
-    - Chapter
-      - Passage: one paragraph, heading or scene break
+```mermaid
+flowchart LR
+  subgraph story["The story"]
+    direction TB
+    library["Library<br/>Everything you've written"]
+    series["Series<br/>Optional: Ethereal Fairytales"]
+    work["Work<br/>One story, linked to one source"]
+    chapters["Chapters<br/>Found by the import rule"]
+    passages["Passages<br/>Paragraphs with permanent IDs"]
+    versions["Versions<br/>Snapshots of the whole work"]
+    library --- series --- work
+    work --- chapters --- passages
+    work --- versions
+  end
+  subgraph feedback["Feedback"]
+    direction TB
+    troop["Troop<br/>A saved pool of readers you can reuse"]
+    round["Round<br/>A slice of one work, pinned to a version<br/>Readers, questions, variants, dates"]
+    notes["Feedback<br/>Reactions, notes, suggested edits<br/>Tagged by round, version and reader"]
+    troop -- "adds readers" --> round
+    round -- "collects" --> notes
+  end
+  round -- "points to" --> work
+  notes -- "anchors to" --> passages
+```
 
-**The feedback**
-
-- Troop (optional): a saved pool of readers
-- Round: one go at a slice of a work, pinned to one version
-  - Reader
-    - Note or reaction, anchored to one passage
-
-A round points at the work rather than holding a copy, and every note anchors to a single passage.
-
-*(The diagram that sat here didn't come across in the export. This is its outline in words, rebuilt from the text around it.)*
+A round points at the work rather than holding a copy, and every note anchors to a single passage. A round can cover the whole work, one chapter, or a few picked passages.
 
 We call the scoped review a **round** rather than a project. Writers already say "beta round," and "project" tends to swallow everything. A saved pool of readers is a **troop**, because that's what a group of monkeys is called.
 
@@ -253,18 +265,25 @@ The app is the feedback inbox. The source doc only gets what the author decides 
 - **Filters** by reader, group, or round.
 - **Blind by default.** Readers can't see each other's notes.
 
-1. A reader reacts to a passage or leaves a note on it.
-2. It's saved with its four tags: round, version, reader, passage.
-3. It shows up in my margin, next to the text it's about.
-4. I decide: accept, dismiss, or later.
-5. Accepted notes and edits sync to the source.
-6. The reader hears that their note was used.
+**Readers never write to the manuscript.** Only feedback the author accepts goes back to the source.
 
-Accepted notes and edits are the only thing that travels back to the source. Notes marked "later" wait in the inbox.
+```mermaid
+flowchart LR
+  source["Source doc<br/>Notion, Google Docs, native"]
+  app["1000 Monkeys<br/>Author and readers read here"]
+  react["Readers react<br/>Reactions, notes, edits"]
+  inbox["Feedback inbox<br/>Margin heat, merged repeats"]
+  triage{"Author triage"}
+  dismissed["Dismissed<br/>Leaves the margin"]
+  source -- "one-way sync" --> app --> react --> inbox --> triage
+  triage -- "accepted only" --> source
+  triage -- "dismiss" --> dismissed
+  triage -- "later" --> inbox
+```
+
+Accepted notes and edits are the only thing that travels back to the source. Notes marked "later" wait in the inbox. When a note is accepted, its reader hears about it.
 
 In Phase 1 I'm the only reader, so sending a note is the same as accepting it.
-
-*(This list stands in for a flow diagram that didn't come across in the export.)*
 
 ### What syncs back
 
@@ -326,11 +345,13 @@ The beta-reader tool market is small and slow-moving, and nobody syncs with wher
 
 | Phase | Who it's for | What it has to prove | What's in it |
 | --- | --- | --- | --- |
-| **1** | Me | The round trip works in a real revision routine | Owner login and server library, Notion import with detect-show-confirm, formatting carried over, paragraph notes landing as Notion comments, offline, better selection and double-tap likes |
-| **Gate 1** | | One full revision pass on Hildur using only 1000 Monkeys | |
-| **2** | Writers and their beta readers | Other writers get the same loop on their own drafts, with their own readers | Sign-up, connect-your-own Notion and Google Docs, more draft layouts, rounds and reader links, reactions and triage, version history, illustrators, the differentiators |
-| **Gate 2** | | Not written down yet (see open questions) | |
-| **3** | Public readers, someday | Published work read straight from the author | To be planned |
+| **1: For me** | Me | It works in my own routine | Owner login and server library, Notion sync (read-only) with detect-show-confirm import, formatting carried over, paragraph notes landing as Notion comments, automatic version snapshots, paste and PDF stay, offline, custom text selection and double-tap likes. Page-mode overflow fix (done) |
+| **Gate 1** | | I revise a whole story in it, start to finish | |
+| **2: For writers** | Other writers and their beta readers | Open to other writers | Accounts, rounds and troops, Google Docs sync, native docs with a light editor, more draft layouts, triage and margin heat, illustration slots, Variants, intent vs. reception |
+| **Gate 2** | | Writers outside my circle run rounds and pay for it | |
+| **3: Maybe someday** | Public readers | Only if writers ask for it | Public reading pages, author profiles, link-out support, Stripe Connect if asked, Kindle support if asked |
+
+Each phase has to earn the next. The gates say what has to be true to move on.
 
 Phase 1 has one job: prove the round trip works in my own revision routine. It's bigger than it first looked, because a private server library and an importer that doesn't assume my layout both have to exist before I trust it with a real manuscript.
 
@@ -341,9 +362,6 @@ Phase 1 has one job: prove the round trip works in my own revision routine. It's
 - At the end I'd pick it for the next story without talking myself into it.
 
 Phase 1 also gets a date. If the Hildur pass hasn't started by then, building stops until I know why.
-
-*(This table stands in for a roadmap diagram that didn't come across in the export. Phase contents are pulled from the rest of this doc.)*
-
 ## Technical notes
 
 The product version breaks the single-file rule on purpose. Sync, accounts and sharing need a small backend. It runs on the Cloudways server the build is hosted on (PHP and MySQL), kept thin and portable so it can move somewhere bigger later.
@@ -414,7 +432,7 @@ Each of these came from how I work. None has been checked against another writer
 - [x] What's a "round"? One numbered go at a slice of the work, pinned to one version. Not a window of time, though it can have a closing date.
 - [ ] $8 or $10 for the Writer tier?
 - [ ] What date goes on Phase 1, and how many hours a week is it allowed to take from writing?
-- [ ] What is gate 2? One candidate: a handful of outside writers each finish a real round and say they'd pay for it.
+- [x] What is gate 2? Writers outside my circle run rounds and pay for it. Still to pin down: how many writers counts.
 - [ ] Is a .docx upload more useful to most writers than Google Docs sync?
 - [ ] The Writer tier sells triage and margin heat, which are table stakes elsewhere, while the two headline features sit under Later. Is it selling the right things?
 - [ ] Two free readers is fewer than any competitor's free tier (three to five). Keep it?
