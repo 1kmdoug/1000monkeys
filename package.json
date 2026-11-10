@@ -3,7 +3,7 @@
   "private": true,
   "description": "A reader for your own drafts.",
   "scripts": {
-    "serve": "python3 -m http.server 4173 --directory public",
+    "serve": "php -S localhost:4173 -t public",
     "test": "playwright test"
   },
   "devDependencies": {
