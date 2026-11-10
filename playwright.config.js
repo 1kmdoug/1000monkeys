@@ -1,5 +1,7 @@
 // Runs the reader on emulated phones and a desktop browser.
 // Local:  npm test      CI: .github/workflows/tests.yml
+const os = require('os');
+const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
@@ -24,9 +26,16 @@ module.exports = defineConfig({
       ? [{ name: 'iphone-safari', use: { ...devices['iPhone 13'] } }]
       : []),
   ],
+  // PHP's built-in server, so the sign-in endpoints run for real. It uses a
+  // test-only password and a throwaway storage folder.
   webServer: {
-    command: 'python3 -m http.server 4173 --directory public',
+    command: 'php -S localhost:4173 -t public',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
+    env: {
+      MONKEYS_CONFIG: path.join(__dirname, 'tests/fixtures/config.test.php'),
+      MONKEYS_STORAGE: path.join(os.tmpdir(), '1000monkeys-test-storage'),
+      PHP_CLI_SERVER_WORKERS: '4',
+    },
   },
 });
