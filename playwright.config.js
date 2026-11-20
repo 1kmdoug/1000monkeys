@@ -29,7 +29,7 @@ module.exports = defineConfig({
   // PHP's built-in server, so the sign-in endpoints run for real. It uses a
   // test-only password and a throwaway storage folder.
   webServer: {
-    command: 'php -S localhost:4173 -t public',
+    command: 'php -S localhost:4173 -t public server/dev-router.php',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     env: {

@@ -96,7 +96,12 @@ test('pages and server answers ask search engines to stay away', async ({ page, 
 });
 
 test('server-only files cannot be fetched from the web', async ({ request }) => {
-  for (const url of ['/server/bootstrap.php', '/config.local.php', '/config.example.php', '/storage/login-attempts.json', '/tests/fixtures/config.test.php']) {
-    expect((await request.get(url)).status(), url).toBe(404);
+  for (const url of ['/server/bootstrap.php', '/server/dev-router.php', '/config.local.php', '/config.example.php', '/storage/login-attempts.json', '/tests/fixtures/config.test.php']) {
+    const res = await request.get(url);
+    expect(res.status(), url).toBe(404);
+    // Belt and braces: whatever comes back must never be server code or a password hash.
+    const body = await res.text();
+    expect(body, url).not.toContain('<?php');
+    expect(body, url).not.toContain('password_hash');
   }
 });

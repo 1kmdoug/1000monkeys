@@ -3,7 +3,7 @@
   "private": true,
   "description": "A reader for your own drafts.",
   "scripts": {
-    "serve": "php -S localhost:4173 -t public",
+    "serve": "php -S localhost:4173 -t public server/dev-router.php",
     "test": "playwright test"
   },
   "devDependencies": {
