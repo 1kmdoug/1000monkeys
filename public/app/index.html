@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#f4ecd8" />
+<meta name="robots" content="noindex, nofollow" />
 <title>Reading Room</title>
 <style>
   :root {
@@ -173,6 +174,26 @@
     padding: 3rem 1rem;
     line-height: 1.6;
   }
+
+  /* ---------- ACCOUNT (owner sign-in) ---------- */
+  .account {
+    margin-top: 2.5rem;
+    text-align: center;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .account button {
+    color: var(--ink-soft);
+    font-style: italic;
+    letter-spacing: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    padding: 0.5rem 0.4rem;
+  }
+  .account button:hover { color: var(--accent); }
+  .status.error { color: var(--accent); }
 
   /* ---------- ADD MODAL ---------- */
   .scrim {
@@ -594,6 +615,12 @@
     <div class="empty" id="empty" style="display:none">
       Nothing here yet.<br/>Drop in a PDF or paste something in, and it'll appear here.
     </div>
+
+    <!-- Shown only when the server has an owner login set up -->
+    <div class="account" id="account" hidden>
+      <span id="accountLabel"></span>
+      <button id="accountBtn" type="button">Sign in</button>
+    </div>
   </main>
 
   <!-- READER -->
@@ -654,6 +681,21 @@
       </div>
     </div>
   </aside>
+
+  <!-- SIGN-IN SHEET -->
+  <div class="scrim" id="loginScrim">
+    <form class="sheet" id="loginForm" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <h2 id="loginTitle">Sign in</h2>
+      <input type="text" name="username" value="owner" autocomplete="username" hidden />
+      <label class="field" for="passwordInput">Password</label>
+      <input id="passwordInput" class="input" type="password" autocomplete="current-password" required />
+      <div class="status" id="loginStatus" role="status"></div>
+      <div class="actions">
+        <button class="btn" type="button" id="cancelLoginBtn">Cancel</button>
+        <button class="btn btn-primary" type="submit" id="submitLoginBtn">Sign in</button>
+      </div>
+    </form>
+  </div>
 
   <!-- ADD SHEET -->
   <div class="scrim" id="addScrim">
@@ -1387,6 +1429,10 @@
 
   // Keyboard
   document.addEventListener('keydown', e => {
+    if ($('#loginScrim').classList.contains('open')) {
+      if (e.key === 'Escape') closeLoginSheet();
+      return;
+    }
     if ($('#addScrim').classList.contains('open')) {
       if (e.key === 'Escape') closeAddSheet();
       return;
@@ -1483,9 +1529,107 @@
     settingsChanged({ rerender: readerMode === 'pages' });
   });
 
+  // =============================================================
+  //  ACCOUNT  (single owner login; the reader works without it)
+  // =============================================================
+  // The server decides who is signed in. If there is no server (or no owner
+  // password set up on it), the sign-in control simply stays hidden.
+  const account = { configured: false, owner: false };
+
+  async function accountRequest(path, body) {
+    const opts = { credentials: 'same-origin', headers: { Accept: 'application/json' } };
+    if (body) {
+      opts.method = 'POST';
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(path, opts);
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* not our server */ }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  function renderAccount() {
+    $('#account').hidden = !account.configured;
+    $('#accountLabel').textContent = account.owner ? 'Signed in ·' : '';
+    $('#accountBtn').textContent = account.owner ? 'Sign out' : 'Sign in';
+    document.body.dataset.owner = account.owner ? 'yes' : 'no';
+  }
+
+  function setAccount(data) {
+    account.configured = !!(data && data.configured);
+    account.owner = !!(data && data.owner);
+    renderAccount();
+  }
+
+  async function refreshAccount() {
+    try {
+      const { ok, data } = await accountRequest('api/session.php');
+      setAccount(ok ? data : null);
+    } catch (e) {
+      setAccount(null); // offline or no server: keep reading, no sign-in
+    }
+  }
+
+  function openLoginSheet() {
+    $('#loginScrim').classList.add('open');
+    $('#passwordInput').value = '';
+    setLoginStatus('');
+    setTimeout(() => $('#passwordInput').focus(), 80);
+  }
+  function closeLoginSheet() {
+    $('#loginScrim').classList.remove('open');
+    if (location.hash === '#login') history.replaceState(null, '', location.pathname + location.search);
+  }
+  function setLoginStatus(text, isError = false) {
+    $('#loginStatus').textContent = text;
+    $('#loginStatus').classList.toggle('error', isError);
+  }
+
+  const LOGIN_ERRORS = {
+    wrong_password: "That password didn't match.",
+    too_many_attempts: 'Too many tries. Wait 15 minutes, then try again.',
+    not_configured: 'No owner password has been set on the server yet.'
+  };
+
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('#submitLoginBtn');
+    btn.disabled = true;
+    setLoginStatus('');
+    try {
+      const { ok, data } = await accountRequest('api/login.php', { password: $('#passwordInput').value });
+      if (ok) {
+        setAccount(data);
+        closeLoginSheet();
+      } else {
+        setLoginStatus(LOGIN_ERRORS[data && data.error] || "Couldn't sign in. Try again.", true);
+        $('#passwordInput').select();
+      }
+    } catch (err) {
+      setLoginStatus("Couldn't reach the server. Check your connection and try again.", true);
+    }
+    btn.disabled = false;
+  });
+
+  $('#cancelLoginBtn').addEventListener('click', closeLoginSheet);
+  $('#loginScrim').addEventListener('click', e => { if (e.target === e.currentTarget) closeLoginSheet(); });
+
+  $('#accountBtn').addEventListener('click', async () => {
+    if (!account.owner) { openLoginSheet(); return; }
+    try {
+      const { ok, data } = await accountRequest('api/logout.php', {});
+      if (ok) setAccount(data);
+    } catch (e) { /* still signed in; the label stays as it was */ }
+  });
+
   // ---- init
   applySettings();
   renderLibrary();
+  refreshAccount().then(() => {
+    // The homepage's "Log in" link lands here as /app/#login
+    if (location.hash === '#login' && account.configured && !account.owner) openLoginSheet();
+  });
 </script>
 </body>
 </html>

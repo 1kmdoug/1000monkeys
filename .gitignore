@@ -5,3 +5,4 @@ config.local.php
 *.local.*
 playwright-report/
 test-results/
+storage/

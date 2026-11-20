@@ -22,7 +22,7 @@ for (const [name, selector] of [['Log in', '#loginLink'], ['Open the reader', '#
   test(`"${name}" opens the reader`, async ({ page }) => {
     await page.goto('/');
     await page.click(selector);
-    await expect(page).toHaveURL(/\/app\/$/);
+    await expect(page).toHaveURL(/\/app\/(#login)?$/);
     await expect(page.locator('#library')).toBeVisible();
   });
 }

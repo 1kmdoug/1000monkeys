@@ -1,0 +1,4 @@
+# Nothing here is meant for search engines yet. Remove when there's a public page worth indexing.
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>

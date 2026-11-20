@@ -13,6 +13,9 @@ A comfortable reader for your own drafts. Read your work like a finished book, m
 | `public/` | Everything the website serves. Nothing outside this folder is public. |
 | `public/index.html` | Landing page (placeholder) |
 | `public/app/` | The reader |
+| `public/app/api/` | Small server endpoints the reader talks to (sign-in for now) |
+| `server/` | Server code that is never served to the web |
+| `config.example.php` | Shape of the private settings file. The real one, `config.local.php`, lives only on the server |
 | `docs/` | Project doc and notes |
 | `tests/` | Automated checks that load the reader on emulated phones and desktop |
 
@@ -23,6 +26,16 @@ npm run serve
 ```
 
 Then open http://localhost:4173 (homepage) or http://localhost:4173/app/ (reader).
+
+## Owner password
+
+Phase 1 has one login: the owner's. Set or change it on the server, from the folder that holds this repo:
+
+```bash
+php server/set-password.php
+```
+
+It asks for the password twice and saves a scrambled version in `config.local.php`. Until that's done, the reader works as before and shows no sign-in.
 
 ## Tests
 
